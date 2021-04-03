@@ -390,6 +390,7 @@ void IGameController::OnPlayerConnect(CPlayer *pPlayer)
 {
 	int ClientID = pPlayer->GetCID();
 	pPlayer->Respawn();
+	pPlayer->ToRunner();
 
 	if(!Server()->ClientPrevIngame(ClientID))
 	{
@@ -401,8 +402,24 @@ void IGameController::OnPlayerConnect(CPlayer *pPlayer)
 
 void IGameController::OnPlayerDisconnect(class CPlayer *pPlayer, const char *pReason)
 {
-	pPlayer->OnDisconnect();
 	int ClientID = pPlayer->GetCID();
+	if(pPlayer->IsCatcher())
+	{
+		int Catcher;
+
+		do
+		{
+			Catcher = -1 + (rand() % MAX_CLIENTS);
+			if(Catcher == ClientID)
+			{
+				continue;
+			}
+		} while(!GameServer()->m_apPlayers[Catcher] || Catcher == ClientID); //random catcher
+
+		GameServer()->GetPlayerChar(Catcher)->GetPlayer()->ToCatcher();
+	}
+	pPlayer->OnDisconnect();
+
 	if(Server()->ClientIngame(ClientID))
 	{
 		char aBuf[512];
@@ -415,6 +432,7 @@ void IGameController::OnPlayerDisconnect(class CPlayer *pPlayer, const char *pRe
 		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
 	}
+
 }
 
 void IGameController::EndRound()
