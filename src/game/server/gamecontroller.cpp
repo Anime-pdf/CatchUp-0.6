@@ -18,6 +18,8 @@
 #include "entities/plasma.h"
 #include "entities/projectile.h"
 #include <game/layers.h>
+#include <ctime>
+#include <cmath>
 
 IGameController::IGameController(class CGameContext *pGameServer)
 {
@@ -441,6 +443,7 @@ const char *IGameController::GetTeamName(int Team)
 
 void IGameController::StartRound()
 {
+	srand(time(0));
 	ResetGame();
 
 	m_RoundStartTick = Server()->Tick();
@@ -452,6 +455,22 @@ void IGameController::StartRound()
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "start round type='%s' teamplay='%d'", m_pGameType, m_GameFlags & GAMEFLAG_TEAMS);
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
+	
+	int Catcher;
+	
+	for(int i = 0; i < MAX_CLIENTS; i++) //all players runners
+	{
+		if(GameServer()->m_apPlayers[i])
+			GameServer()->GetPlayerChar(i)->GetPlayer()->ToRunner();
+	}
+
+	do
+	{
+		Catcher = -1 + (rand() % MAX_CLIENTS);
+	} while(!GameServer()->m_apPlayers[Catcher]); //random catcher
+
+	GameServer()->GetPlayerChar(Catcher)->GetPlayer()->ToCatcher();
+
 }
 
 void IGameController::ChangeMap(const char *pToMap)

@@ -453,6 +453,12 @@ void CCharacter::FireWeapon()
 				m_pPlayer->GetCID(), m_Core.m_ActiveWeapon);
 			pTarget->UnFreeze();
 
+			if(m_pPlayer->IsCatcher())
+			{
+				pTarget->GetPlayer()->ToCatcher();
+				m_pPlayer->ToRunner();
+			}
+
 			if(m_FreezeHammer)
 				pTarget->Freeze();
 

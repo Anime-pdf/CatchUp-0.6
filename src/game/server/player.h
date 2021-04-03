@@ -211,6 +211,15 @@ public:
 	int64 m_EligibleForFinishCheck;
 	bool m_VotedForPractice;
 	int m_SwapTargetsClientID; //Client ID of the swap target for the given player
+
+	//CatchUp
+public:
+	bool IsCatcher();
+	void ToCatcher();
+	void ToRunner();
+
+private:
+	bool m_IsCatcher;
 };
 
 #endif

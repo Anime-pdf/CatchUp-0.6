@@ -904,6 +904,27 @@ bool CPlayer::IsPlaying()
 	return false;
 }
 
+bool CPlayer::IsCatcher()
+{
+	return m_IsCatcher;
+}
+
+void CPlayer::ToCatcher()
+{
+	m_TeeInfos.m_UseCustomColor = true;
+	m_IsCatcher = true;
+	m_TeeInfos.m_ColorBody = 53063;
+	m_TeeInfos.m_ColorFeet = 524159;
+}
+
+void CPlayer::ToRunner()
+{
+	m_TeeInfos.m_UseCustomColor = true;
+	m_IsCatcher = false;
+	m_TeeInfos.m_ColorBody = 69;
+	m_TeeInfos.m_ColorFeet = 255;
+}
+
 void CPlayer::SpectatePlayerName(const char *pName)
 {
 	if(!pName)
