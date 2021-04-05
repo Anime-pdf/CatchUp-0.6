@@ -1,3 +1,16 @@
+# CatchUp Mod
+![Teeworlds version](https://img.shields.io/badge/Teeworlds-0.6.5-brightgreen.svg)
+
+The CatchUp mod is a mod that tries to copy real game named "tag"
+
+## variables
+
+| variable                    | default | min | max  | description                                        |
+| --------------------------- | ------- | --- | ---- | -------------------------------------------------- |
+| sv_withweapo                | 0       | 0   | 1    | Players will have with weapons                     |
+
+## DDraceNetwork, a cooperative racing mod of Teeworlds
+---------------------------
 [![DDraceNetwork](https://ddnet.tw/ddnet-small.png)](https://ddnet.tw) [![](https://github.com/ddnet/ddnet/workflows/Build/badge.svg)](https://github.com/ddnet/ddnet/actions?query=workflow%3ABuild+event%3Apush+branch%3Amaster)
 
 Our own flavor of DDRace, a Teeworlds mod. See the [website](https://ddnet.tw) for more information.
