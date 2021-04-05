@@ -147,6 +147,10 @@ public:
 	// DDRace
 
 	float m_CurrentRecord;
+
+	//CatchUp
+public:
+	int m_Playing;
 };
 
 #endif

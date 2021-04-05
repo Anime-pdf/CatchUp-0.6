@@ -18,8 +18,6 @@
 #include "entities/plasma.h"
 #include "entities/projectile.h"
 #include <game/layers.h>
-#include <ctime>
-#include <cmath>
 
 IGameController::IGameController(class CGameContext *pGameServer)
 {
@@ -45,6 +43,9 @@ IGameController::IGameController(class CGameContext *pGameServer)
 	m_aNumSpawnPoints[2] = 0;
 
 	m_CurrentRecord = 0;
+
+	//CatchUp
+	m_Playing = 0;
 }
 
 IGameController::~IGameController()
@@ -390,7 +391,7 @@ void IGameController::OnPlayerConnect(CPlayer *pPlayer)
 {
 	int ClientID = pPlayer->GetCID();
 	pPlayer->Respawn();
-	pPlayer->ToRunner();
+
 
 	if(!Server()->ClientPrevIngame(ClientID))
 	{
@@ -403,13 +404,15 @@ void IGameController::OnPlayerConnect(CPlayer *pPlayer)
 void IGameController::OnPlayerDisconnect(class CPlayer *pPlayer, const char *pReason)
 {
 	int ClientID = pPlayer->GetCID();
+	if(pPlayer->GetTeam() == 0)
+		m_Playing--;
 	if(pPlayer->IsCatcher())
 	{
 		int Catcher;
 
 		do
 		{
-			Catcher = -1 + (rand() % MAX_CLIENTS);
+			Catcher = 0 + (rand() % MAX_CLIENTS);
 			if(Catcher == ClientID)
 			{
 				continue;
@@ -484,7 +487,7 @@ void IGameController::StartRound()
 
 	do
 	{
-		Catcher = -1 + (rand() % MAX_CLIENTS);
+		Catcher = 0 + (rand() % MAX_CLIENTS);
 	} while(!GameServer()->m_apPlayers[Catcher]); //random catcher
 
 	GameServer()->GetPlayerChar(Catcher)->GetPlayer()->ToCatcher();
@@ -516,6 +519,12 @@ void IGameController::OnCharacterSpawn(class CCharacter *pChr)
 	// give default weapons
 	pChr->GiveWeapon(WEAPON_HAMMER);
 	pChr->GiveWeapon(WEAPON_GUN);
+
+	if(g_Config.m_SvWeapons == 1)
+	{
+		pChr->GiveWeapon(WEAPON_SHOTGUN);
+		pChr->GiveWeapon(WEAPON_GRENADE);
+	}
 }
 
 void IGameController::HandleCharacterTiles(CCharacter *pChr, int MapIndex)
@@ -610,7 +619,6 @@ void IGameController::Snap(int SnappingClient)
 		return;
 
 	pGameInfoEx->m_Flags =
-		GAMEINFOFLAG_TIMESCORE |
 		GAMEINFOFLAG_GAMETYPE_RACE |
 		GAMEINFOFLAG_GAMETYPE_DDRACE |
 		GAMEINFOFLAG_GAMETYPE_DDNET |

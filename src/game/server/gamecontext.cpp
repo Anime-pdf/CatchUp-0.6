@@ -547,6 +547,7 @@ void CGameContext::StartVote(const char *pDesc, const char *pCommand, const char
 	str_copy(m_aVoteReason, pReason, sizeof(m_aVoteReason));
 	SendVoteSet(-1);
 	m_VoteUpdate = true;
+
 }
 
 void CGameContext::EndVote()
@@ -3004,6 +3005,37 @@ void CGameContext::ConVote(IConsole::IResult *pResult, void *pUserData)
 		pSelf->ForceVote(pResult->m_ClientID, false);
 }
 
+void CGameContext::ConGiveWeapons(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	int yes = clamp(pResult->GetInteger(0), 0, 1);
+	if(yes == 1)
+	{
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(pSelf->m_apPlayers[i])
+			{
+				pSelf->GetPlayerChar(i)->GiveWeapon(WEAPON_SHOTGUN);
+				pSelf->GetPlayerChar(i)->GiveWeapon(WEAPON_GRENADE);
+			}
+		}
+		g_Config.m_SvWeapons = 1;
+	}
+	else
+	{
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(pSelf->m_apPlayers[i])
+			{
+				pSelf->GetPlayerChar(i)->GiveWeapon(WEAPON_SHOTGUN, true);
+				pSelf->GetPlayerChar(i)->GiveWeapon(WEAPON_GRENADE, true);
+			}
+		}
+		g_Config.m_SvWeapons = 0;
+	}
+
+}
+
 void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
 	pfnCallback(pResult, pCallbackUserData);
@@ -3040,6 +3072,7 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("random_map", "?i[stars]", CFGFLAG_SERVER, ConRandomMap, this, "Random map");
 	Console()->Register("random_unfinished_map", "?i[stars]", CFGFLAG_SERVER, ConRandomUnfinishedMap, this, "Random unfinished map");
 	Console()->Register("restart", "?i[seconds]", CFGFLAG_SERVER | CFGFLAG_STORE, ConRestart, this, "Restart in x seconds (0 = abort)");
+	Console()->Register("sv_withweapo", "?i[value]", CFGFLAG_SERVER | CFGFLAG_STORE, ConGiveWeapons, this, "Give weapons");
 	Console()->Register("broadcast", "r[message]", CFGFLAG_SERVER, ConBroadcast, this, "Broadcast message");
 	Console()->Register("say", "r[message]", CFGFLAG_SERVER, ConSay, this, "Say in chat");
 	Console()->Register("set_team", "i[id] i[team-id] ?i[delay in minutes]", CFGFLAG_SERVER, ConSetTeam, this, "Set team of player to team");

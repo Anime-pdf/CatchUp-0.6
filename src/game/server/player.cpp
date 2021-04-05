@@ -8,6 +8,8 @@
 #include <engine/server.h>
 #include <game/gamecore.h>
 #include <game/version.h>
+#include <ctime>
+#include <cmath>
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS)
 
@@ -586,10 +588,15 @@ void CPlayer::KillCharacter(int Weapon)
 {
 	if(m_pCharacter)
 	{
-		m_pCharacter->Die(m_ClientID, Weapon);
+		if(Weapon == WEAPON_SELF)
+			return;
+		else
+		{
+			m_pCharacter->Die(m_ClientID, Weapon);
 
-		delete m_pCharacter;
-		m_pCharacter = 0;
+			delete m_pCharacter;
+			m_pCharacter = 0;
+		}
 	}
 }
 
@@ -613,6 +620,7 @@ CCharacter *CPlayer::ForceSpawn(vec2 Pos)
 
 void CPlayer::SetTeam(int Team, bool DoChatMsg)
 {
+	srand(time(0));
 	KillCharacter();
 
 	m_Team = Team;
@@ -629,6 +637,43 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 
 	if(Team == TEAM_SPECTATORS)
 	{
+		GameServer()->m_pController->m_Playing--;
+
+		if(GameServer()->m_pController->m_Playing > 0)
+		{
+			if(IsCatcher())
+			{
+				ToRunner();
+				int Catcher;
+
+				do
+				{
+					Catcher = 0 + (rand() % MAX_CLIENTS);
+					if(Catcher == m_ClientID)
+					{
+						continue;
+					}
+				} while(!GameServer()->m_apPlayers[Catcher] || Catcher == m_ClientID); //random catcher
+
+				GameServer()->m_apPlayers[Catcher]->ToCatcher();
+			}
+		}
+
+		// update spectator modes
+		for(auto &pPlayer : GameServer()->m_apPlayers)
+		{
+			if(pPlayer && pPlayer->m_SpectatorID == m_ClientID)
+				pPlayer->m_SpectatorID = SPEC_FREEVIEW;
+		}
+	}
+	if(Team == 0)
+	{
+		GameServer()->m_pController->m_Playing++;
+		if(GameServer()->m_pController->m_Playing==1)
+			ToCatcher();
+		else
+			ToRunner();
+		Server()->SetClientScore(m_ClientID, 1);
 		// update spectator modes
 		for(auto &pPlayer : GameServer()->m_apPlayers)
 		{
