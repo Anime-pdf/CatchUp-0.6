@@ -1,46 +1,122 @@
-name: CMake
+name: Build
 
-on: [push]
-
-env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+on:
+  push:
+    branches-ignore:
+      - staging.tmp
+      - trying.tmp
+      - staging-squash-merge.tmp
+  pull_request:
 
 jobs:
-  build:
-    # The CMake configure and build commands are platform agnostic and should work equally
-    # well on Windows or Mac.  You can convert this to a matrix build if you need
-    # cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-latest
+  build-cmake:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest, ubuntu-16.04]
+        include:
+        - os: ubuntu-latest
+          cmake-args: -G "Unix Makefiles"
+          build-args: --parallel
+          package-file: DDNet-*-linux_x86_64.tar.xz
+          fancy: true
+          env:
+            CFLAGS: -Wdeclaration-after-statement -Werror
+            CXXFLAGS: -Werror
+        - os: ubuntu-16.04
+          cmake-path: /usr/bin/
+          cmake-args: -G "Unix Makefiles"
+          package-file: DDNet-*-linux_x86_64.tar.xz
+          fancy: false
+          env:
+            CFLAGS: -Wdeclaration-after-statement -Werror
+            CXXFLAGS: -Werror
+        - os: macOS-latest
+          cmake-args: -G "Unix Makefiles"
+          build-args: --parallel
+          package-file: DDNet-*-osx.dmg
+          fancy: false
+          env:
+            CFLAGS: -Wdeclaration-after-statement -Werror
+            CXXFLAGS: -Werror
+        - os: windows-latest
+          cmake-args: -G "Visual Studio 16 2019" -A x64
+          package-file: DDNet-*-win64.zip
+          fancy: false
+          env:
+            CFLAGS: /WX
+            CXXFLAGS: /WX
+            LDFLAGS: /WX
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
 
-    - name: Create Build Environment
-      # Some projects don't allow in-source building, so create a separate build directory
-      # We'll use this as our working directory for all subsequent commands
-      run: cmake -E make_directory ${{github.workspace}}/build
-
-    - name: Configure CMake
-      # Use a bash shell so we can use the same syntax for environment variable
-      # access regardless of the host operating system
-      shell: bash
-      working-directory: ${{github.workspace}}/build
-      # Note the current convention is to use the -S and -B options here to specify source 
-      # and build directories, but this is only available with CMake 3.13 and higher.  
-      # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-
-    - name: Build
-      working-directory: ${{github.workspace}}/build
-      shell: bash
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: cmake --build . --config $BUILD_TYPE
-
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      shell: bash
-      # Execute tests defined by the CMake configuration.  
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest -C $BUILD_TYPE
+    - name: Prepare Linux
+      if: contains(matrix.os, 'ubuntu')
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install pkg-config cmake libfreetype6-dev libnotify-dev libsdl2-dev libsqlite3-dev -y
+    - name: Prepare Linux (fancy)
+      if: contains(matrix.os, 'ubuntu') && matrix.fancy
+      run: |
+        sudo apt-get install libmariadbclient-dev libwebsockets-dev -y
+    - name: Prepare MacOS
+      if: contains(matrix.os, 'macOS')
+      run: |
+        brew update || true
+        brew install pkg-config sdl2
+        brew upgrade freetype
+        sudo rm -rf /Library/Developer/CommandLineTools
+    - name: Build in debug mode
+      env: ${{ matrix.env }}
+      run: |
+        mkdir debug
+        cd debug
+        ${{ matrix.cmake-path }}cmake --version
+        ${{ matrix.cmake-path }}cmake ${{ matrix.cmake-args }} -DCMAKE_BUILD_TYPE=Debug -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=. ..
+        ${{ matrix.cmake-path }}cmake --build . --config Debug ${{ matrix.build-args }} --target everything
+    - name: Test debug
+      run: |
+        cd debug
+        ${{ matrix.cmake-path }}cmake --build . --config Debug ${{ matrix.build-args }} --target run_tests
+        ./DDNet-Server shutdown
+    - name: Build in release mode
+      env: ${{ matrix.env }}
+      run: |
+        mkdir release
+        cd release
+        ${{ matrix.cmake-path }}cmake ${{ matrix.cmake-args }} -DCMAKE_BUILD_TYPE=Release -Werror=dev -DDOWNLOAD_GTEST=ON -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=. ..
+        ${{ matrix.cmake-path }}cmake --build . --config Release ${{ matrix.build-args }} --target everything
+    - name: Test release
+      run: |
+        cd release
+        ${{ matrix.cmake-path }}cmake --build . --config Release ${{ matrix.build-args }} --target run_tests
+        ./DDNet-Server shutdown
+    - name: Build in release mode with debug info and all features on
+      if: matrix.fancy
+      env: ${{ matrix.env }}
+      run: |
+        mkdir fancy
+        cd fancy
+        ${{ matrix.cmake-path }}cmake ${{ matrix.cmake-args }} -DCMAKE_BUILD_TYPE=RelWithDebInfo -DANTIBOT=ON -DMYSQL=ON -DWEBSOCKETS=ON ..
+        ${{ matrix.cmake-path }}cmake --build . --config RelWithDebInfo ${{ matrix.build-args }} --target everything
+    - name: Test fancy
+      if: matrix.fancy
+      run: |
+        cd release
+        ${{ matrix.cmake-path }}cmake --build . --config RelWithDebInfo ${{ matrix.build-args }} --target run_tests
+        ./DDNet-Server shutdown
+    - name: Package
+      run: |
+        cd release
+        ${{ matrix.cmake-path }}cmake --build . --config Release ${{ matrix.build-args }} --target package_default
+        mkdir artifacts
+        mv ${{ matrix.package-file }} artifacts
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: ddnet-${{ matrix.os }}
+        path: release/artifacts
