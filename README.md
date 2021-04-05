@@ -8,7 +8,6 @@ The CatchUp mod is a mod that tries to copy real game named "tag"
 | variable                    | default | min | max  | description                                        |
 | --------------------------- | ------- | --- | ---- | -------------------------------------------------- |
 | sv_withweapo                | 0       | 0   | 1    | Players will have with weapons                     |
-| --------------------------- | ------- | --- | ---- | -------------------------------------------------- |
 
 ## Teeworlds - A retro multiplayer shooter
 ---------------------------
