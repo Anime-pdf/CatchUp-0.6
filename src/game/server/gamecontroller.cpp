@@ -390,7 +390,7 @@ bool IGameController::OnEntity(int Index, vec2 Pos, int Layer, int Flags, int Nu
 void IGameController::OnPlayerConnect(CPlayer *pPlayer)
 {
 	int ClientID = pPlayer->GetCID();
-	pPlayer->Respawn();
+	pPlayer->SetTeam(TEAM_SPECTATORS);
 
 
 	if(!Server()->ClientPrevIngame(ClientID))
