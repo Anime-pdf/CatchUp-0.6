@@ -50,7 +50,7 @@ void CGameContext::ConInfo(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "info",
-		"DDraceNetwork Mod. Version: " GAME_VERSION);
+		"CatchUp Mod. Version: " GAME_VERSION);
 	if(GIT_SHORTREV_HASH)
 	{
 		char aBuf[64];
@@ -58,11 +58,7 @@ void CGameContext::ConInfo(IConsole::IResult *pResult, void *pUserData)
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "info", aBuf);
 	}
 	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "info",
-		"Official site: DDNet.tw");
-	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "info",
 		"For more info: /cmdlist");
-	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "info",
-		"Or visit DDNet.tw");
 }
 
 void CGameContext::ConList(IConsole::IResult *pResult, void *pUserData)

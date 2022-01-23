@@ -2243,7 +2243,7 @@ void CCharacter::GiveWeapon(int Weapon, bool Remove)
 
 void CCharacter::GiveAllWeapons()
 {
-	for(int i = WEAPON_GUN; i < NUM_WEAPONS - 1; i++)
+	for(int i = WEAPON_GUN; i <= WEAPON_GRENADE; i++)
 	{
 		GiveWeapon(i);
 	}

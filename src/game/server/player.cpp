@@ -116,7 +116,7 @@ void CPlayer::Reset()
 	m_DND = false;
 
 	m_LastPause = 0;
-	m_Score = -9999;
+	m_Score = 0;
 	m_HasFinishScore = false;
 
 	// Variable initialized:
@@ -189,6 +189,9 @@ void CPlayer::Tick()
 	if(m_ChatScore > 0)
 		m_ChatScore--;
 
+	if(GetTeam() == TEAM_RED && IsCatcher() && !(Server()->Tick()%Server()->TickSpeed()))
+		m_Score++;
+	dbg_msg("Score", "id - %d, score - %d", m_ClientID, m_Score);
 	Server()->SetClientScore(m_ClientID, m_Score);
 
 	if(m_Moderating && m_Afk)
@@ -342,7 +345,7 @@ void CPlayer::Snap(int SnappingClient)
 
 	int SnappingClientVersion = SnappingClient >= 0 ? GameServer()->GetClientVersion(SnappingClient) : CLIENT_VERSIONNR;
 	int Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
-	int Score = abs(m_Score) * -1;
+	int Score = abs(m_Score);
 
 	// send 0 if times of others are not shown
 	if(SnappingClient != m_ClientID && g_Config.m_SvHideScore)
@@ -376,7 +379,7 @@ void CPlayer::Snap(int SnappingClient)
 			pPlayerInfo->m_PlayerFlags |= protocol7::PLAYERFLAG_ADMIN;
 
 		// Times are in milliseconds for 0.7
-		pPlayerInfo->m_Score = Score == -9999 ? -1 : -Score * 1000;
+		pPlayerInfo->m_Score = Score;
 		pPlayerInfo->m_Latency = Latency;
 	}
 
@@ -639,24 +642,11 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	{
 		GameServer()->m_pController->m_Playing--;
 
-		if(GameServer()->m_pController->m_Playing > 0)
+		if(IsCatcher() && GameServer()->m_pController->m_Playing > 0)
 		{
-			if(IsCatcher())
-			{
-				ToRunner();
-				int Catcher;
+			ToRunner();
 
-				do
-				{
-					Catcher = 0 + (rand() % MAX_CLIENTS);
-					if(Catcher == m_ClientID)
-					{
-						continue;
-					}
-				} while(!GameServer()->m_apPlayers[Catcher] || Catcher == m_ClientID); //random catcher
-
-				GameServer()->m_apPlayers[Catcher]->ToCatcher();
-			}
+			GameServer()->m_apPlayers[GameServer()->GetRandomCatcher()]->ToCatcher();
 		}
 
 		// update spectator modes
@@ -666,14 +656,29 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 				pPlayer->m_SpectatorID = SPEC_FREEVIEW;
 		}
 	}
-	if(Team == 0)
+	if(Team == TEAM_RED)
 	{
 		GameServer()->m_pController->m_Playing++;
-		if(GameServer()->m_pController->m_Playing==1)
+		if(GameServer()->m_pController->m_Playing == 1)
 			ToCatcher();
 		else
 			ToRunner();
-		Server()->SetClientScore(m_ClientID, 1);
+		{
+			int avrg = 0, lol = 0;
+			for(auto &pPlayer : GameServer()->m_apPlayers)
+			{
+				if(pPlayer && pPlayer->GetTeam() == TEAM_RED)
+				{
+					avrg += pPlayer->m_Score;
+					lol++;
+				}
+			}
+			Server()->SetClientScore(m_ClientID, avrg / lol);
+		}
+		if(g_Config.m_SvWeapons)
+		{
+			GameServer()->m_apPlayers[m_ClientID]->GetCharacter()->GiveAllWeapons();	
+		}
 		// update spectator modes
 		for(auto &pPlayer : GameServer()->m_apPlayers)
 		{

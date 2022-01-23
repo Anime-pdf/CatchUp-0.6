@@ -2219,11 +2219,6 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				str_format(aChatText, sizeof(aChatText), "'%s' changed name to '%s'", aOldName, Server()->ClientName(ClientID));
 				SendChat(-1, CGameContext::CHAT_ALL, aChatText);
 
-				// reload scores
-				Score()->PlayerData(ClientID)->Reset();
-				m_apPlayers[ClientID]->m_Score = -9999;
-				Score()->LoadPlayerData(ClientID);
-
 				SixupNeedsUpdate = true;
 			}
 
@@ -2234,59 +2229,6 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(Server()->ClientCountry(ClientID) != pMsg->m_Country)
 				SixupNeedsUpdate = true;
 			Server()->SetClientCountry(ClientID, pMsg->m_Country);
-
-			str_copy(pPlayer->m_TeeInfos.m_SkinName, pMsg->m_pSkin, sizeof(pPlayer->m_TeeInfos.m_SkinName));
-			pPlayer->m_TeeInfos.m_UseCustomColor = pMsg->m_UseCustomColor;
-			pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
-			pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
-			if(!Server()->IsSixup(ClientID))
-				pPlayer->m_TeeInfos.ToSixup();
-
-			if(SixupNeedsUpdate)
-			{
-				protocol7::CNetMsg_Sv_ClientDrop Drop;
-				Drop.m_ClientID = ClientID;
-				Drop.m_pReason = "";
-				Drop.m_Silent = true;
-
-				protocol7::CNetMsg_Sv_ClientInfo Info;
-				Info.m_ClientID = ClientID;
-				Info.m_pName = Server()->ClientName(ClientID);
-				Info.m_Country = pMsg->m_Country;
-				Info.m_pClan = pMsg->m_pClan;
-				Info.m_Local = 0;
-				Info.m_Silent = true;
-				Info.m_Team = pPlayer->GetTeam();
-
-				for(int p = 0; p < 6; p++)
-				{
-					Info.m_apSkinPartNames[p] = pPlayer->m_TeeInfos.m_apSkinPartNames[p];
-					Info.m_aSkinPartColors[p] = pPlayer->m_TeeInfos.m_aSkinPartColors[p];
-					Info.m_aUseCustomColors[p] = pPlayer->m_TeeInfos.m_aUseCustomColors[p];
-				}
-
-				for(int i = 0; i < MAX_CLIENTS; i++)
-				{
-					if(i != ClientID)
-					{
-						Server()->SendPackMsg(&Drop, MSGFLAG_VITAL | MSGFLAG_NORECORD, i);
-						Server()->SendPackMsg(&Info, MSGFLAG_VITAL | MSGFLAG_NORECORD, i);
-					}
-				}
-			}
-			else
-			{
-				protocol7::CNetMsg_Sv_SkinChange Msg;
-				Msg.m_ClientID = ClientID;
-				for(int p = 0; p < 6; p++)
-				{
-					Msg.m_apSkinPartNames[p] = pPlayer->m_TeeInfos.m_apSkinPartNames[p];
-					Msg.m_aSkinPartColors[p] = pPlayer->m_TeeInfos.m_aSkinPartColors[p];
-					Msg.m_aUseCustomColors[p] = pPlayer->m_TeeInfos.m_aUseCustomColors[p];
-				}
-
-				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, -1);
-			}
 
 			Server()->ExpireServerInfo();
 		}
@@ -3072,7 +3014,7 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("random_map", "?i[stars]", CFGFLAG_SERVER, ConRandomMap, this, "Random map");
 	Console()->Register("random_unfinished_map", "?i[stars]", CFGFLAG_SERVER, ConRandomUnfinishedMap, this, "Random unfinished map");
 	Console()->Register("restart", "?i[seconds]", CFGFLAG_SERVER | CFGFLAG_STORE, ConRestart, this, "Restart in x seconds (0 = abort)");
-	Console()->Register("sv_withweapo", "?i[value]", CFGFLAG_SERVER | CFGFLAG_STORE, ConGiveWeapons, this, "Give weapons");
+	Console()->Register("sv_withweapons", "?i[value]", CFGFLAG_SERVER | CFGFLAG_STORE, ConGiveWeapons, this, "Give weapons");
 	Console()->Register("broadcast", "r[message]", CFGFLAG_SERVER, ConBroadcast, this, "Broadcast message");
 	Console()->Register("say", "r[message]", CFGFLAG_SERVER, ConSay, this, "Say in chat");
 	Console()->Register("set_team", "i[id] i[team-id] ?i[delay in minutes]", CFGFLAG_SERVER, ConSetTeam, this, "Set team of player to team");
@@ -4192,4 +4134,14 @@ bool CGameContext::RateLimitPlayerMapVote(int ClientID)
 		return true;
 	}
 	return false;
+}
+
+int CGameContext::GetRandomCatcher()
+{
+	int id;
+	do
+	{
+		id = rand() % MAX_CLIENTS;
+	} while(!m_apPlayers[id] || m_apPlayers[id]->GetTeam() != TEAM_RED || m_apPlayers[id]->IsCatcher());
+	return id;
 }

@@ -9,5 +9,6 @@
 #define GAME_NETVERSION "0.6 626fce9a778df4d4"
 #define GAME_NAME "DDNet"
 #define CLIENT_VERSIONNR 15040
+#define CatchUp_Ver "1.0"
 extern const char *GIT_SHORTREV_HASH;
 #endif

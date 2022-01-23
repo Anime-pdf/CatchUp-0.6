@@ -391,9 +391,9 @@ void IGameController::OnPlayerConnect(CPlayer *pPlayer)
 {
 	int ClientID = pPlayer->GetCID();
 	pPlayer->Respawn(false);
-	pPlayer->SetTeam(TEAM_SPECTATORS);
 	GameServer()->m_pController->m_Playing++;
-
+	pPlayer->ToRunner();
+	pPlayer->SetTeam(TEAM_SPECTATORS);
 
 	if(!Server()->ClientPrevIngame(ClientID))
 	{
@@ -406,22 +406,11 @@ void IGameController::OnPlayerConnect(CPlayer *pPlayer)
 void IGameController::OnPlayerDisconnect(class CPlayer *pPlayer, const char *pReason)
 {
 	int ClientID = pPlayer->GetCID();
-	if(pPlayer->GetTeam() == 0)
+	if(pPlayer->GetTeam() == TEAM_RED)
 		m_Playing--;
 	if(pPlayer->IsCatcher())
 	{
-		int Catcher;
-
-		do
-		{
-			Catcher = 0 + (rand() % MAX_CLIENTS);
-			if(Catcher == ClientID)
-			{
-				continue;
-			}
-		} while(!GameServer()->m_apPlayers[Catcher] || Catcher == ClientID); //random catcher
-
-		GameServer()->GetPlayerChar(Catcher)->GetPlayer()->ToCatcher();
+		GameServer()->m_apPlayers[GameServer()->GetRandomCatcher()]->ToCatcher();
 	}
 	pPlayer->OnDisconnect();
 
@@ -437,7 +426,6 @@ void IGameController::OnPlayerDisconnect(class CPlayer *pPlayer, const char *pRe
 		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
 	}
-
 }
 
 void IGameController::EndRound()
@@ -478,22 +466,17 @@ void IGameController::StartRound()
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "start round type='%s' teamplay='%d'", m_pGameType, m_GameFlags & GAMEFLAG_TEAMS);
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
-	
-	int Catcher;
-	
+		
 	for(int i = 0; i < MAX_CLIENTS; i++) //all players runners
 	{
 		if(GameServer()->m_apPlayers[i])
-			GameServer()->GetPlayerChar(i)->GetPlayer()->ToRunner();
+		{
+			GameServer()->m_apPlayers[i]->ToRunner();
+			GameServer()->m_apPlayers[i]->m_Score = 0;
+		}
 	}
 
-	do
-	{
-		Catcher = 0 + (rand() % MAX_CLIENTS);
-	} while(!GameServer()->m_apPlayers[Catcher]); //random catcher
-
-	GameServer()->GetPlayerChar(Catcher)->GetPlayer()->ToCatcher();
-
+	GameServer()->m_apPlayers[GameServer()->GetRandomCatcher()]->ToCatcher();
 }
 
 void IGameController::ChangeMap(const char *pToMap)
@@ -522,7 +505,7 @@ void IGameController::OnCharacterSpawn(class CCharacter *pChr)
 	pChr->GiveWeapon(WEAPON_HAMMER);
 	pChr->GiveWeapon(WEAPON_GUN);
 
-	if(g_Config.m_SvWeapons == 1)
+	if(g_Config.m_SvWeapons)
 	{
 		pChr->GiveWeapon(WEAPON_SHOTGUN);
 		pChr->GiveWeapon(WEAPON_GRENADE);
@@ -625,11 +608,9 @@ void IGameController::Snap(int SnappingClient)
 		GAMEINFOFLAG_GAMETYPE_DDRACE |
 		GAMEINFOFLAG_GAMETYPE_DDNET |
 		GAMEINFOFLAG_UNLIMITED_AMMO |
-		GAMEINFOFLAG_RACE_RECORD_MESSAGE |
 		GAMEINFOFLAG_ALLOW_EYE_WHEEL |
 		GAMEINFOFLAG_ALLOW_HOOK_COLL |
 		GAMEINFOFLAG_ALLOW_ZOOM |
-		GAMEINFOFLAG_BUG_DDRACE_GHOST |
 		GAMEINFOFLAG_BUG_DDRACE_INPUT |
 		GAMEINFOFLAG_PREDICT_DDRACE |
 		GAMEINFOFLAG_PREDICT_DDRACE_TILES |

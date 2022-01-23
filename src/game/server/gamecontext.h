@@ -292,6 +292,9 @@ public:
 
 	std::shared_ptr<CScoreRandomMapResult> m_SqlRandomMapResult;
 
+	//CatchUp
+	int GetRandomCatcher();
+
 private:
 	bool m_VoteWillPass;
 	class CScore *m_pScore;

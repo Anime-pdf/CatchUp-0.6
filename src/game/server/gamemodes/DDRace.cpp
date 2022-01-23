@@ -11,7 +11,7 @@
 #include <game/version.h>
 
 #define GAME_TYPE_NAME "CatchUp"
-#define TEST_TYPE_NAME "TestCatchUp"
+#define TEST_TYPE_NAME "CatchUp"
 
 CGameControllerDDRace::CGameControllerDDRace(class CGameContext *pGameServer) :
 	IGameController(pGameServer), m_Teams(pGameServer), m_pInitResult(nullptr)
@@ -126,22 +126,13 @@ void CGameControllerDDRace::OnPlayerConnect(CPlayer *pPlayer)
 	IGameController::OnPlayerConnect(pPlayer);
 	int ClientID = pPlayer->GetCID();
 
-	// init the player
-	Score()->PlayerData(ClientID)->Reset();
-	pPlayer->m_Score = Score()->PlayerData(ClientID)->m_BestTime ? Score()->PlayerData(ClientID)->m_BestTime : -9999;
-
-	// Can't set score here as LoadScore() is threaded, run it in
-	// LoadScoreThreaded() instead
-	Score()->LoadPlayerData(ClientID);
-
 	if(!Server()->ClientPrevIngame(ClientID))
 	{
 		char aBuf[512];
 		str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s", Server()->ClientName(ClientID), GetTeamName(pPlayer->GetTeam()));
 		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf, -1, CGameContext::CHAT_SIX);
 
-		GameServer()->SendChatTarget(ClientID, "DDraceNetwork Mod. Version: " GAME_VERSION);
-		GameServer()->SendChatTarget(ClientID, "please visit DDNet.tw or say /info and make sure to read our /rules");
+		GameServer()->SendChatTarget(ClientID, "CatchUp Mod. Version: " CatchUp_Ver);
 	}
 }
 
