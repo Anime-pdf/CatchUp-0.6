@@ -2196,7 +2196,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		{
 			if(g_Config.m_SvSpamprotection && pPlayer->m_LastChangeInfo && pPlayer->m_LastChangeInfo + Server()->TickSpeed() * g_Config.m_SvInfoChangeDelay > Server()->Tick())
 				return;
-			
+
 			CNetMsg_Cl_ChangeInfo *pMsg = (CNetMsg_Cl_ChangeInfo *)pRawMsg;
 			if(!str_utf8_check(pMsg->m_pName) || !str_utf8_check(pMsg->m_pClan) || !str_utf8_check(pMsg->m_pSkin))
 			{
@@ -2216,16 +2216,10 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				char aChatText[256];
 				str_format(aChatText, sizeof(aChatText), "'%s' changed name to '%s'", aOldName, Server()->ClientName(ClientID));
 				SendChat(-1, CGameContext::CHAT_ALL, aChatText);
-
-				SixupNeedsUpdate = true;
 			}
 
-			if(str_comp(Server()->ClientClan(ClientID), pMsg->m_pClan))
-				SixupNeedsUpdate = true;
 			Server()->SetClientClan(ClientID, pMsg->m_pClan);
 
-			if(Server()->ClientCountry(ClientID) != pMsg->m_Country)
-				SixupNeedsUpdate = true;
 			Server()->SetClientCountry(ClientID, pMsg->m_Country);
 
 			Server()->ExpireServerInfo();
