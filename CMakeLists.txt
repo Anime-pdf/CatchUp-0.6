@@ -1177,6 +1177,7 @@ set(EXPECTED_DATA
   maps/ctf5.map
   maps/ctf6.map
   maps/ctf7.map
+  maps/ddd1.map
   maps/dm1.map
   maps/dm2.map
   maps/dm6.map
