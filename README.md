@@ -5,9 +5,9 @@ The CatchUp mod is a mod that tries to copy real game named "tag"
 
 ## variables
 
-| variable                    | default | min | max  | description                                        |
-| --------------------------- | ------- | --- | ---- | -------------------------------------------------- |
-| sv_withweapo                | 0       | 0   | 1    | Players will have weapons                     |
+| variable       | default | min | max  | description                                        |
+|----------------| ------- | --- | ---- | -------------------------------------------------- |
+| sv_withweapons | 0       | 0   | 1    | Players will have weapons                     |
 
 ## DDraceNetwork, a cooperative racing mod of Teeworlds
 ---------------------------

@@ -4138,10 +4138,11 @@ bool CGameContext::RateLimitPlayerMapVote(int ClientID)
 
 int CGameContext::GetRandomCatcher()
 {
-	int id;
-	do
+	std::vector<int> freeCatchers;
+	for(auto &player :m_apPlayers)
 	{
-		id = rand() % MAX_CLIENTS;
-	} while(!m_apPlayers[id] || m_apPlayers[id]->GetTeam() != TEAM_RED || m_apPlayers[id]->IsCatcher());
-	return id;
+		if(player && player->GetTeam() == TEAM_RED && player->IsCatcher())
+			freeCatchers.push_back(player->GetCID());
+	}
+	return freeCatchers.at(rand() % freeCatchers.size());
 }
