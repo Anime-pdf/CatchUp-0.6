@@ -189,9 +189,8 @@ void CPlayer::Tick()
 	if(m_ChatScore > 0)
 		m_ChatScore--;
 
-	if(GetTeam() == TEAM_RED && IsCatcher() && !(Server()->Tick()%Server()->TickSpeed()))
+	if(GetTeam() == TEAM_RED && !IsCatcher() && !(Server()->Tick()%Server()->TickSpeed()))
 		m_Score++;
-	dbg_msg("Score", "id - %d, score - %d", m_ClientID, m_Score);
 	Server()->SetClientScore(m_ClientID, m_Score);
 
 	if(m_Moderating && m_Afk)
