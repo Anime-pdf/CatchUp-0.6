@@ -17,7 +17,7 @@ CGameControllerDDRace::CGameControllerDDRace(class CGameContext *pGameServer) :
 {
 	m_pGameType = GAME_TYPE_NAME;
 
-	InitTeleporter();SixupNeedsUpdate
+	InitTeleporter();
 }
 
 CGameControllerDDRace::~CGameControllerDDRace()
