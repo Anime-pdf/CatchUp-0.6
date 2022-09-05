@@ -11,14 +11,13 @@
 #include <game/version.h>
 
 #define GAME_TYPE_NAME "CatchUp"
-#define TEST_TYPE_NAME "CatchUp"
 
 CGameControllerDDRace::CGameControllerDDRace(class CGameContext *pGameServer) :
 	IGameController(pGameServer), m_Teams(pGameServer), m_pInitResult(nullptr)
 {
-	m_pGameType = g_Config.m_SvTestingCommands ? TEST_TYPE_NAME : GAME_TYPE_NAME;
+	m_pGameType = GAME_TYPE_NAME;
 
-	InitTeleporter();
+	InitTeleporter();SixupNeedsUpdate
 }
 
 CGameControllerDDRace::~CGameControllerDDRace()
